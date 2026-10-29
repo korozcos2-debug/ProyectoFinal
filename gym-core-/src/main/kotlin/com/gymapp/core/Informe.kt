@@ -62,7 +62,14 @@ class Informe(
         s.ejercicios.sumOf { e ->
             e.series.filter { it.completada }.sumOf { it.repeticiones * (it.peso ?: 0.0) }
         }
+    /** Restaura duración y hora de una sesión guardada antes (al reabrir la app). */
+    fun restaurar(sesionId: String, segundos: Long, hora: LocalTime) {
+        extras[sesionId] = Extra(segundos, hora)
+    }
 
+    /** Duración y hora de todas las sesiones, para guardarlas en el teléfono. */
+    fun extrasActuales(): Map<String, Pair<Long, LocalTime>> =
+        extras.mapValues { it.value.segundos to it.value.hora }
     fun tiempoTotal(): Long = sesiones().sumOf { duracion(it) }
     fun volumenTotal(): Double = sesiones().sumOf { volumen(it) }
     fun seriesTotalesHechas(): Int = sesiones().sumOf { seriesHechas(it) }

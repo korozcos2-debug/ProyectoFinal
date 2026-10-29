@@ -6,7 +6,7 @@
 
     <groupId>com.gymapp</groupId>
     <artifactId>gym-core</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
     <name>gym-core</name>
     <description>Logica de la app de gimnasio (Kotlin puro, sin dependencias de Android)</description>
