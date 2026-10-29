@@ -1,9 +1,14 @@
 package com.gymapp.core
 
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 import kotlin.system.exitProcess
 
 private val FORMATO_FECHA: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+private val FORMATO_HORA: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+private val ES: Locale = Locale.forLanguageTag("es")
 
 // ---------- utilidades de consola ----------
 
@@ -22,6 +27,20 @@ private fun pedir(texto: String, accion: (String) -> Resultado<*>) {
     while (true) {
         val error = accion(leer(texto)).mensajeONull() ?: return
         println("(!) $error")
+    }
+}
+
+private fun nombreDia(f: LocalDate): String =
+    f.dayOfWeek.getDisplayName(TextStyle.FULL, ES).replaceFirstChar { it.uppercase() }
+
+/** Pide el peso de una serie en la unidad del usuario. ENTER = sin peso. */
+private fun pedirPeso(unidad: UnidadPeso): Double? {
+    while (true) {
+        val texto = leer("Peso por serie en ${unidad.etiqueta} (ENTER para omitir): ")
+        if (texto.isEmpty()) return null
+        val r = Validadores.pesoSerieTexto(texto)
+        if (r.esOk) return r.obtenerONull()
+        informar(r)
     }
 }
 
@@ -64,7 +83,7 @@ private fun registrar(repo: UsuarioRepositorio): Usuario {
 
 // ---------- sesión de entrenamiento (con cronómetro) ----------
 
-private fun mostrar(rutina: Rutina, crono: Cronometro) {
+private fun mostrar(rutina: Rutina, crono: Cronometro, unidad: UnidadPeso) {
     println("\n=== ${rutina.nombre.uppercase()} (${(rutina.progreso * 100).toInt()}%) ===   Tiempo: ${crono.formato()}")
     if (rutina.ejercicios.isEmpty()) {
         println("(sin ejercicios)")
@@ -74,7 +93,7 @@ private fun mostrar(rutina: Rutina, crono: Cronometro) {
         println("${i + 1}. ${ej.nombre} (${ej.seriesCompletadas}/${ej.series.size})")
         ej.series.forEachIndexed { j, s ->
             val marca = if (s.completada) "[X]" else "[ ]"
-            val peso = s.peso?.let { " x ${fmt(it)}" } ?: ""
+            val peso = s.peso?.let { " x ${fmt(it)} ${unidad.etiqueta}" } ?: ""
             println("     ${j + 1}) ${s.repeticiones} reps$peso $marca")
         }
     }
@@ -91,8 +110,7 @@ private fun cerrarSesion(
     println(if (completa) "\n*** ¡Rutina completada! ***" else "\nSesión detenida.")
     println("Tiempo total: ${formatoTiempo(segundos)}")
 
-    val resultado = informe.guardar(rutina, segundos)
-    val error = resultado.mensajeONull()
+    val error = informe.guardar(rutina, segundos).mensajeONull()
     if (error == null) println("Tu avance se guardó en Estadísticas.") else println("(!) $error")
 
     // Se reinicia la rutina para poder repetirla; lo guardado ya está en el informe.
@@ -100,7 +118,12 @@ private fun cerrarSesion(
     if (rutina.tipo == TipoRutina.PERSONALIZADA) gestor.guardar(rutina)
 }
 
-private fun sesion(rutina: Rutina, gestor: GestorRutinasPersonalizadas, informe: Informe) {
+private fun sesion(
+    rutina: Rutina,
+    gestor: GestorRutinasPersonalizadas,
+    informe: Informe,
+    unidad: UnidadPeso
+) {
     val esPersonalizada = rutina.tipo == TipoRutina.PERSONALIZADA
     val crono = Cronometro()
     if (rutina.ejercicios.isNotEmpty()) {
@@ -110,14 +133,14 @@ private fun sesion(rutina: Rutina, gestor: GestorRutinasPersonalizadas, informe:
 
     val ayuda = buildString {
         append("\nm <ej> <serie> marcar/desmarcar | r <ej> <serie> <reps> cambiar reps")
-        append("\np <ej> <serie> <peso> peso de una serie | w <ej> <peso> peso a todas")
-        append("\na <ej> [reps] agregar serie | z <ej> <serie> quitar serie")
+        append("\np <ej> <serie> <peso> peso de una serie (${unidad.etiqueta}) | w <ej> <peso> peso a todas")
+        append("\na <ej> [reps] [peso] agregar serie | z <ej> <serie> quitar serie")
         if (esPersonalizada) append("\nn nuevo ejercicio | b <ej> borrar ejercicio")
         append("\nx detener sesión")
     }
 
     while (true) {
-        mostrar(rutina, crono)
+        mostrar(rutina, crono, unidad)
         println(ayuda)
         val partes = leer("> ").split(" ").filter { it.isNotEmpty() }
         if (partes.isEmpty()) continue
@@ -150,7 +173,14 @@ private fun sesion(rutina: Rutina, gestor: GestorRutinasPersonalizadas, informe:
             }
 
             "a" -> if (ej == null) println("(!) Ejercicio inexistente.") else {
-                informar(ej.agregarSerie(entero(partes, 2) ?: Limites.REPS_POR_DEFECTO))
+                val reps = entero(partes, 2) ?: Limites.REPS_POR_DEFECTO
+                val textoPeso = partes.getOrNull(3)
+                if (textoPeso == null) {
+                    informar(ej.agregarSerie(reps))
+                } else {
+                    val peso = Validadores.pesoSerieTexto(textoPeso)
+                    if (peso.esOk) informar(ej.agregarSerie(reps, peso.obtenerONull())) else informar(peso)
+                }
             }
 
             "z" -> if (ej == null) println("(!) Ejercicio inexistente.") else informar(ej.eliminarSerie(serie))
@@ -159,7 +189,8 @@ private fun sesion(rutina: Rutina, gestor: GestorRutinasPersonalizadas, informe:
                 val nombre = leer("Nombre del ejercicio: ")
                 val series = leer("Número de series: ").toIntOrNull() ?: 0
                 val reps = leer("Repeticiones por serie: ").toIntOrNull() ?: 0
-                informar(rutina.agregarEjercicio(nombre, series, reps))
+                val peso = pedirPeso(unidad)
+                informar(rutina.agregarEjercicio(nombre, series, reps, peso))
                 if (rutina.ejercicios.isNotEmpty()) crono.iniciar() // arranca con el primer ejercicio
             }
 
@@ -185,16 +216,16 @@ private fun sesion(rutina: Rutina, gestor: GestorRutinasPersonalizadas, informe:
         }
 
         if (rutina.completada) {
-            mostrar(rutina, crono)
+            mostrar(rutina, crono, unidad)
             cerrarSesion(rutina, crono, gestor, informe, completa = true)
             return
         }
     }
 }
 
-// ---------- menús ----------
+// ---------- menús de entrenamiento ----------
 
-private fun menuEjercicios(gestor: GestorRutinasPersonalizadas, informe: Informe) {
+private fun menuEjercicios(gestor: GestorRutinasPersonalizadas, informe: Informe, unidad: UnidadPeso) {
     while (true) {
         println("\n=== EJERCICIOS ===")
         val grupos = GrupoMuscular.entries
@@ -207,11 +238,11 @@ private fun menuEjercicios(gestor: GestorRutinasPersonalizadas, informe: Informe
             println("(!) Opción inválida.")
             continue
         }
-        sesion(Catalogo.crearRutina(grupo), gestor, informe)
+        sesion(Catalogo.crearRutina(grupo), gestor, informe, unidad)
     }
 }
 
-private fun menuPersonalizado(gestor: GestorRutinasPersonalizadas, informe: Informe) {
+private fun menuPersonalizado(gestor: GestorRutinasPersonalizadas, informe: Informe, unidad: UnidadPeso) {
     while (true) {
         println("\n=== MODO PERSONALIZADO ===")
         val rutinas = gestor.listar()
@@ -227,7 +258,7 @@ private fun menuPersonalizado(gestor: GestorRutinasPersonalizadas, informe: Info
             "n" -> {
                 val resultado = gestor.crear(leer("Nombre de la rutina: "))
                 val rutina = resultado.obtenerONull()
-                if (rutina != null) sesion(rutina, gestor, informe) else informar(resultado)
+                if (rutina != null) sesion(rutina, gestor, informe, unidad) else informar(resultado)
             }
             "d" -> {
                 val rutina = entero(partes, 1)?.let { rutinas.getOrNull(it - 1) }
@@ -235,7 +266,7 @@ private fun menuPersonalizado(gestor: GestorRutinasPersonalizadas, informe: Info
             }
             else -> {
                 val rutina = cmd.toIntOrNull()?.let { rutinas.getOrNull(it - 1) }
-                if (rutina == null) println("(!) Opción inválida.") else sesion(rutina, gestor, informe)
+                if (rutina == null) println("(!) Opción inválida.") else sesion(rutina, gestor, informe, unidad)
             }
         }
     }
@@ -244,18 +275,26 @@ private fun menuPersonalizado(gestor: GestorRutinasPersonalizadas, informe: Info
 // ---------- estadísticas / informe ----------
 
 private fun mostrarHistorial(informe: Informe, unidad: UnidadPeso) {
-    val sesiones = informe.sesiones()
-    if (sesiones.isEmpty()) {
+    val dias = informe.sesionesPorDia()
+    if (dias.isEmpty()) {
         println("(aún no hay sesiones guardadas)")
         return
     }
-    sesiones.forEachIndexed { i, s ->
+    var n = 0
+    for ((fecha, lista) in dias) {
         println(
-            "${i + 1}) ${s.fecha.format(FORMATO_FECHA)}  ${s.rutinaNombre} | " +
-                    "series ${informe.seriesHechas(s)}/${informe.seriesTotales(s)} | " +
-                    "volumen ${fmt(informe.volumen(s))} ${unidad.etiqueta} | " +
-                    "tiempo ${formatoTiempo(informe.duracion(s))}"
+            "\n${nombreDia(fecha)} ${fecha.format(FORMATO_FECHA)} - ${lista.size} sesión(es) | " +
+                    "tiempo ${formatoTiempo(lista.sumOf { informe.duracion(it) })} | " +
+                    "volumen ${fmt(lista.sumOf { informe.volumen(it) })} ${unidad.etiqueta}"
         )
+        for (s in lista) {
+            n++
+            val hora = informe.hora(s)?.format(FORMATO_HORA) ?: "--:--"
+            println(
+                "  $n) $hora  ${s.rutinaNombre} | series ${informe.seriesHechas(s)}/${informe.seriesTotales(s)} | " +
+                        "volumen ${fmt(informe.volumen(s))} ${unidad.etiqueta} | tiempo ${formatoTiempo(informe.duracion(s))}"
+            )
+        }
     }
 }
 
@@ -278,8 +317,7 @@ private fun mostrarComparacion(informe: Informe, unidad: UnidadPeso) {
     }
 }
 
-private fun menuEstadisticas(informe: Informe, usuario: Usuario) {
-    val unidad = usuario.unidadPeso
+private fun menuEstadisticas(informe: Informe, unidad: UnidadPeso) {
     while (true) {
         println("\n=== ESTADÍSTICAS / INFORME ===")
         println(
@@ -296,10 +334,63 @@ private fun menuEstadisticas(informe: Informe, usuario: Usuario) {
             "1" -> mostrarHistorial(informe, unidad)
             "2" -> mostrarComparacion(informe, unidad)
             "d" -> {
-                val sesion = entero(partes, 1)?.let { informe.sesiones().getOrNull(it - 1) }
+                val sesion = entero(partes, 1)?.let { informe.sesionesPlanas().getOrNull(it - 1) }
                 if (sesion == null) println("(!) Registro inexistente.") else {
                     informe.eliminar(sesion)
                     println("Registro eliminado.")
+                }
+            }
+            else -> println("(!) Opción inválida.")
+        }
+    }
+}
+
+// ---------- peso corporal ----------
+
+private fun menuPeso(usuario: Usuario, repo: UsuarioRepositorio, pesos: HistorialPeso): Usuario {
+    var actual = usuario
+    val unidad = actual.unidadPeso.etiqueta
+    while (true) {
+        val lista = pesos.listar()
+        println("\n=== MI PESO ===")
+        println("Peso actual: ${fmt(actual.peso)} $unidad")
+
+        val tendencia = when (pesos.tendencia()) {
+            Tendencia.SUBIO -> "subiendo"
+            Tendencia.BAJO -> "bajando"
+            Tendencia.IGUAL -> "estable"
+            else -> "aún sin datos suficientes"
+        }
+        println("Tendencia: $tendencia")
+        pesos.cambioTotal()?.let {
+            val signo = if (it > 0) "+" else ""
+            println("Cambio desde el primer registro: $signo${fmt(it)} $unidad")
+        }
+
+        println("\nHistorial de cambios:")
+        lista.forEachIndexed { i, r ->
+            val dif = if (i == 0) "(inicial)" else {
+                val d = r.peso - lista[i - 1].peso
+                (if (d > 0) "+" else "") + fmt(d)
+            }
+            println("  ${i + 1}) ${r.fecha.format(FORMATO_FECHA)} ${r.hora.format(FORMATO_HORA)}  ${fmt(r.peso)} $unidad  $dif")
+        }
+
+        println("\n1) Actualizar mi peso\n0) Volver")
+        when (leer("> ")) {
+            "0" -> return actual
+            "1" -> {
+                val texto = leer("Nuevo peso en $unidad (ENTER para cancelar): ")
+                if (texto.isEmpty()) continue
+                val valor = Validadores.peso(texto, actual.unidadPeso)
+                val numero = valor.obtenerONull()
+                if (numero == null) {
+                    informar(valor)
+                } else {
+                    actual = actual.copy(peso = numero)
+                    repo.guardar(actual)
+                    pesos.registrar(numero)
+                    println("Peso actualizado.")
                 }
             }
             else -> println("(!) Opción inválida.")
@@ -312,17 +403,20 @@ private fun menuEstadisticas(informe: Informe, usuario: Usuario) {
 fun main() {
     val usuarios = UsuarioRepositorioMemoria()
     val gestor = GestorRutinasPersonalizadas(RutinaRepositorioMemoria())
-    val informe = Informe(Historial(HistorialRepositorioMemoria()))
+    val informe = Informe(HistorialRepositorioMemoria())
+    val pesos = HistorialPeso()
 
-    val usuario = registrar(usuarios)
+    var usuario = registrar(usuarios)
+    pesos.registrar(usuario.peso) // primer registro de peso
 
     while (true) {
-        println("\nHola, ${usuario.nombre}")
-        println("1) Ejercicios\n2) Modo personalizado\n3) Estadísticas / Informe\n0) Salir")
+        println("\nHola, ${usuario.nombre} (${fmt(usuario.peso)} ${usuario.unidadPeso.etiqueta})")
+        println("1) Ejercicios\n2) Modo personalizado\n3) Estadísticas / Informe\n4) Mi peso\n0) Salir")
         when (leer("> ")) {
-            "1" -> menuEjercicios(gestor, informe)
-            "2" -> menuPersonalizado(gestor, informe)
-            "3" -> menuEstadisticas(informe, usuario)
+            "1" -> menuEjercicios(gestor, informe, usuario.unidadPeso)
+            "2" -> menuPersonalizado(gestor, informe, usuario.unidadPeso)
+            "3" -> menuEstadisticas(informe, usuario.unidadPeso)
+            "4" -> usuario = menuPeso(usuario, usuarios, pesos)
             "0" -> {
                 println("¡Hasta luego!")
                 return
