@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.gymapp.core.RutinasTest" time="0.139" tests="8" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.gymapp.core.RutinasTest" time="0.094" tests="8" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="17"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -15,7 +15,7 @@
     <property name="user.country" value="ES"/>
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="sun.boot.library.path" value="C:\Program Files\java\jdk-17.0.0.1\bin"/>
-    <property name="sun.java.command" value="C:\Users\user\AppData\Local\Temp\surefire15361565251955322979\surefirebooter-20261028163951210_3.jar C:\Users\user\AppData\Local\Temp\surefire15361565251955322979 2026-10-28T16-39-51_082-jvmRun1 surefire-20261028163951210_1tmp surefire_0-20261028163951210_2tmp"/>
+    <property name="sun.java.command" value="C:\Users\user\AppData\Local\Temp\surefire5274501517735785090\surefirebooter-20261028172822458_3.jar C:\Users\user\AppData\Local\Temp\surefire5274501517735785090 2026-10-28T17-28-22_276-jvmRun1 surefire-20261028172822458_1tmp surefire_0-20261028172822458_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="C:\Users\user\Desktop\porgra2\Proyecto\gym-core=\gym-core-\target\test-classes;C:\Users\user\Desktop\porgra2\Proyecto\gym-core=\gym-core-\target\classes;C:\Users\user\.m2\repository\org\jetbrains\kotlin\kotlin-stdlib\2.0.21\kotlin-stdlib-2.0.21.jar;C:\Users\user\.m2\repository\org\jetbrains\annotations\13.0\annotations-13.0.jar;C:\Users\user\.m2\repository\org\jetbrains\kotlin\kotlin-test-junit5\2.0.21\kotlin-test-junit5-2.0.21.jar;C:\Users\user\.m2\repository\org\jetbrains\kotlin\kotlin-test\2.0.21\kotlin-test-2.0.21.jar;C:\Users\user\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.1\junit-jupiter-api-5.10.1.jar;C:\Users\user\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\user\.m2\repository\org\junit\platform\junit-platform-commons\1.10.1\junit-platform-commons-1.10.1.jar;C:\Users\user\.m2\repository\org\junit\platform\junit-platform-launcher\1.10.1\junit-platform-launcher-1.10.1.jar;C:\Users\user\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.2\junit-jupiter-engine-5.10.2.jar;C:\Users\user\.m2\repository\org\junit\platform\junit-platform-engine\1.10.2\junit-platform-engine-1.10.2.jar;C:\Users\user\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -31,7 +31,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
-    <property name="surefire.real.class.path" value="C:\Users\user\AppData\Local\Temp\surefire15361565251955322979\surefirebooter-20261028163951210_3.jar"/>
+    <property name="surefire.real.class.path" value="C:\Users\user\AppData\Local\Temp\surefire5274501517735785090\surefirebooter-20261028172822458_3.jar"/>
     <property name="user.script" value=""/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="17.0.0.1+2-3"/>
@@ -62,12 +62,12 @@
     <property name="maven.repo.local" value="C:\Users\user\.m2\repository"/>
     <property name="java.class.version" value="61.0"/>
   </properties>
-  <testcase name="editar series y repeticiones" classname="com.gymapp.core.RutinasTest" time="0.058"/>
-  <testcase name="cada rutina guia es una copia independiente" classname="com.gymapp.core.RutinasTest" time="0.002"/>
+  <testcase name="editar series y repeticiones" classname="com.gymapp.core.RutinasTest" time="0.036"/>
+  <testcase name="cada rutina guia es una copia independiente" classname="com.gymapp.core.RutinasTest" time="0.001"/>
   <testcase name="rutinas guia tienen las zonas esperadas" classname="com.gymapp.core.RutinasTest" time="0.001"/>
-  <testcase name="modo personalizado crear listar y eliminar" classname="com.gymapp.core.RutinasTest" time="0.044"/>
-  <testcase name="series iniciales respetan el maximo orientativo" classname="com.gymapp.core.RutinasTest" time="0.001"/>
-  <testcase name="ejercicio con datos invalidos es rechazado" classname="com.gymapp.core.RutinasTest" time="0.002"/>
-  <testcase name="marcar completado en cualquier orden y progreso" classname="com.gymapp.core.RutinasTest" time="0.0"/>
-  <testcase name="flujo de registro completo" classname="com.gymapp.core.RutinasTest" time="0.004"/>
+  <testcase name="modo personalizado crear listar y eliminar" classname="com.gymapp.core.RutinasTest" time="0.035"/>
+  <testcase name="series iniciales respetan el maximo orientativo" classname="com.gymapp.core.RutinasTest" time="0.0"/>
+  <testcase name="ejercicio con datos invalidos es rechazado" classname="com.gymapp.core.RutinasTest" time="0.0"/>
+  <testcase name="marcar completado en cualquier orden y progreso" classname="com.gymapp.core.RutinasTest" time="0.001"/>
+  <testcase name="flujo de registro completo" classname="com.gymapp.core.RutinasTest" time="0.003"/>
 </testsuite>
